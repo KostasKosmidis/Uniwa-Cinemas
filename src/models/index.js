@@ -1,29 +1,30 @@
+﻿const Sequelize = require("sequelize");
 const sequelize = require("../config/database");
 
-const Movie = require("./movie")(sequelize);
-const Room = require("./room")(sequelize);
-const Screening = require("./screening")(sequelize);
-const Reservation = require("./reservation")(sequelize);
-const User = require("./user")(sequelize);
+const Movie = require("./movie")(sequelize, Sequelize.DataTypes);
+const Room = require("./room")(sequelize, Sequelize.DataTypes);
+const Screening = require("./screening")(sequelize, Sequelize.DataTypes);
+const Reservation = require("./reservation")(sequelize, Sequelize.DataTypes);
+const User = require("./user")(sequelize, Sequelize.DataTypes);
 
-// RELATIONS
-Movie.hasMany(Screening, { foreignKey: "movieId" });
-Screening.belongsTo(Movie, { foreignKey: "movieId" });
+// RELATIONS (ΤΑ ΟΝΟΜΑΤΑ ΠΡΕΠΕΙ ΝΑ ΤΑΙΡΙΑΖΟΥΝ ΜΕ ΤΗ ΒΑΣΗ)
+Movie.hasMany(Screening, { foreignKey: "MovieId" });
+Screening.belongsTo(Movie, { foreignKey: "MovieId" });
 
-Room.hasMany(Screening, { foreignKey: "roomId" });
-Screening.belongsTo(Room, { foreignKey: "roomId" });
+Room.hasMany(Screening, { foreignKey: "RoomId" });
+Screening.belongsTo(Room, { foreignKey: "RoomId" });
 
-User.hasMany(Reservation, { foreignKey: "userId" });
-Reservation.belongsTo(User, { foreignKey: "userId" });
+User.hasMany(Reservation, { foreignKey: "UserId" });
+Reservation.belongsTo(User, { foreignKey: "UserId" });
 
-Screening.hasMany(Reservation, { foreignKey: "screeningId" });
-Reservation.belongsTo(Screening, { foreignKey: "screeningId" });
+Screening.hasMany(Reservation, { foreignKey: "ScreeningId" });
+Reservation.belongsTo(Screening, { foreignKey: "ScreeningId" });
 
 module.exports = {
-  sequelize,
-  Movie,
-  Room,
-  Screening,
-  Reservation,
-  User,
+    sequelize,
+    Movie,
+    Room,
+    Screening,
+    Reservation,
+    User,
 };

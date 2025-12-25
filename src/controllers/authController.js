@@ -1,11 +1,28 @@
-const authService = require("../services/authService");
+class AuthController {
+    constructor({ authService }) {
+        this.authService = authService;
+    }
 
-exports.register = async (req, res) => {
-  const result = await authService.register(req.body);
-  res.json(result);
-};
+    register = async (req, res) => {
+        const { username, password } = req.body;
 
-exports.login = async (req, res) => {
-  const result = await authService.login(req.body);
-  res.json(result);
-};
+        const user = await this.authService.register(username, password);
+        res.status(201).json({
+            message: "User created",
+            user: {
+                Id: user.Id,
+                Username: user.Username,
+                Role: user.Role,
+            },
+        });
+    };
+
+    login = async (req, res) => {
+        const { username, password } = req.body;
+
+        const token = await this.authService.login(username, password);
+        res.json({ token });
+    };
+}
+
+module.exports = AuthController;

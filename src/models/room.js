@@ -1,13 +1,36 @@
-const { DataTypes } = require("sequelize");
-
-module.exports = (sequelize) => {
-  const Room = sequelize.define("Room", {
-    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    name: DataTypes.STRING,
-    capacity: DataTypes.INTEGER,
-    is3D: { type: DataTypes.BOOLEAN, defaultValue: false },
-    isDolbyAtmos: { type: DataTypes.BOOLEAN, defaultValue: false },
-  });
-
-  return Room;
+module.exports = (sequelize, DataTypes) => {
+    return sequelize.define(
+        "Room",
+        {
+            Id: {
+                type: DataTypes.UUID,
+                primaryKey: true,
+            },
+            Name: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            Capacity: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+            },
+            HasDolbyAtmos: {
+                type: DataTypes.BOOLEAN,
+            },
+            Is3D: {
+                type: DataTypes.BOOLEAN,
+            },
+            CreatedAt: {
+                type: DataTypes.DATE,
+            },
+            UpdatedAt: {
+                type: DataTypes.DATE,
+            },
+        },
+        {
+            tableName: "Rooms",
+            schema: "dbo",
+            timestamps: false,
+        }
+    );
 };

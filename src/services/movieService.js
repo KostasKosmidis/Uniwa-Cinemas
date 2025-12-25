@@ -1,7 +1,27 @@
-const { Movie } = require("../models");
+class MovieService {
+    constructor({ Movie }) {
+        this.Movie = Movie;
+    }
 
-exports.getAll = () => Movie.findAll();
-exports.getOne = (id) => Movie.findByPk(id);
-exports.create = (data) => Movie.create(data);
-exports.update = (id, data) => Movie.update(data, { where: { id } });
-exports.delete = (id) => Movie.destroy({ where: { id } });
+    getAll() {
+        return this.Movie.findAll();
+    }
+
+    getOne(id) {
+        return this.Movie.findByPk(id);
+    }
+
+    create(data) {
+        return this.Movie.create(data);
+    }
+
+    update(id, data) {
+        return this.Movie.update(data, { where: { id } });
+    }
+
+    delete(id) {
+        return this.Movie.destroy({ where: { id } });
+    }
+}
+
+module.exports = MovieService;

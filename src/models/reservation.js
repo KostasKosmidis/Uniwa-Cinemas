@@ -1,14 +1,31 @@
-const { DataTypes } = require("sequelize");
-
-module.exports = (sequelize) => {
-  const Reservation = sequelize.define("Reservation", {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    seats: DataTypes.INTEGER,
-  });
-
-  return Reservation;
+module.exports = (sequelize, DataTypes) => {
+    return sequelize.define(
+        "Reservation",
+        {
+            Id: {
+                type: DataTypes.UUID,
+                primaryKey: true,
+            },
+            UserId: {
+                type: DataTypes.UUID,
+                allowNull: false,
+            },
+            ScreeningId: {
+                type: DataTypes.UUID,
+                allowNull: false,
+            },
+            Seats: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+            },
+            CreatedAt: {
+                type: DataTypes.DATE,
+            },
+        },
+        {
+            tableName: "Reservations",
+            schema: "dbo",
+            timestamps: false,
+        }
+    );
 };

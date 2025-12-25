@@ -1,12 +1,14 @@
-const router = require("express").Router();
-const controller = require("../controllers/movieController");
-const auth = require("../middleware/auth");
-const isAdmin = require("../middleware/isAdmin");
+﻿const { Router } = require("express");
+const { makeInvoker } = require("awilix-express");
 
-router.get("/", controller.getAll);
-router.get("/:id", controller.getOne);
-router.post("/", auth, isAdmin, controller.create);
-router.put("/:id", auth, isAdmin, controller.update);
-router.delete("/:id", auth, isAdmin, controller.delete);
+const router = Router();
+
+const api = makeInvoker((container) => container.movieController);
+
+router.get("/", api("getAll"));
+router.get("/:id", api("getOne"));
+router.post("/", api("create"));
+router.put("/:id", api("update"));
+router.delete("/:id", api("delete"));
 
 module.exports = router;

@@ -1,30 +1,42 @@
-const bcrypt = require("bcryptjs");
+﻿const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 
-exports.register = async ({ username, password }) => {
-  const hashed = await bcrypt.hash(password, 10);
+class AuthService {
+    async register(username, password) {
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await User.create({
-    username,
-    password: hashed,
-  });
+        const user = await User.create({
+            Username: username,
+            PasswordHash: hashedPassword,
+            Role: "user", // 👈 default role
+        });
 
-  return { message: "User created", user };
-};
+        return user;
+    }
 
-exports.login = async ({ username, password }) => {
-  const user = await User.findOne({ where: { username } });
-  if (!user) return { error: "User not found" };
+    async login(username, password) {
+        const user = await User.findOne({
+            where: { Username: username },
+        });
 
-  const match = await bcrypt.compare(password, user.password);
-  if (!match) return { error: "Invalid credentials" };
+        if (!user) {
+            throw new Error("Invalid credentials");
+        }
 
-  const token = jwt.sign(
-    { id: user.id, role: user.role },
-    "SECRET_KEY",
-    { expiresIn: "1d" }
-  );
+        const isValid = await bcrypt.compare(password, user.PasswordHash);
+        if (!isValid) {
+            throw new Error("Invalid credentials");
+        }
 
-  return { message: "Logged in", token };
-};
+        const token = jwt.sign(
+            { userId: user.Id, role: user.Role },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+
+        return token;
+    }
+}
+
+module.exports = AuthService;
