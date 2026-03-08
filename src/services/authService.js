@@ -9,7 +9,7 @@ class AuthService {
         const user = await User.create({
             Username: username,
             PasswordHash: hashedPassword,
-            Role: "user", // 👈 default role
+            Role: "user", // default role
         });
 
         return user;

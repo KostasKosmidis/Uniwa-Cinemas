@@ -31,9 +31,9 @@
             },
         },
         {
-            tableName: "Movies",   // 🔴 ΑΚΡΙΒΩΣ όπως στο SSMS
-            schema: "dbo",         // 🔴 ΑΠΑΡΑΙΤΗΤΟ
-            timestamps: false,     // 🔴 γιατί τα έχεις ήδη στη βάση
+            tableName: "Movies",   
+            schema: "dbo",         
+            timestamps: false,     
         }
     );
 };

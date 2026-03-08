@@ -1,8 +1,8 @@
-﻿// src/api/omdb.js
+﻿
 const KEY = import.meta.env.VITE_OMDB_KEY;
 
 if (!KEY) {
-    // Μην σπάει το build, αλλά θα το βλέπεις στο console
+    
     console.warn("Missing VITE_OMDB_KEY in uniwa-cinemas-frontend/.env");
 }
 
@@ -22,7 +22,7 @@ export async function omdbByTitle(title, year) {
     const res = await fetch(url);
     const data = await res.json();
 
-    // OMDb όταν αποτύχει στέλνει Response: "False"
+    
     if (data?.Response === "False") {
         cache.set(key, null);
         return null;

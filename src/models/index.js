@@ -7,7 +7,7 @@ const Screening = require("./screening")(sequelize, Sequelize.DataTypes);
 const Reservation = require("./reservation")(sequelize, Sequelize.DataTypes);
 const User = require("./user")(sequelize, Sequelize.DataTypes);
 
-// RELATIONS (ΤΑ ΟΝΟΜΑΤΑ ΠΡΕΠΕΙ ΝΑ ΤΑΙΡΙΑΖΟΥΝ ΜΕ ΤΗ ΒΑΣΗ)
+
 Movie.hasMany(Screening, { foreignKey: "MovieId" });
 Screening.belongsTo(Movie, { foreignKey: "MovieId" });
 

@@ -1,16 +1,16 @@
 ﻿const express = require("express");
-const cors = require("cors"); // ⭐ ADD THIS
+const cors = require("cors"); // ADD THIS
 const { scopePerRequest } = require("awilix-express");
 const container = require("./container");
 
 const app = express();
 
-// ⭐ ADD THIS
+// ADD THIS
 app.use(cors({ origin: "http://localhost:5173" }));
 
 app.use(express.json());
 
-// 🔑 Dependency Injection
+// Dependency Injection
 app.use(scopePerRequest(container));
 
 // routes
