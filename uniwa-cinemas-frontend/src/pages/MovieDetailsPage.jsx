@@ -1,149 +1,319 @@
-﻿import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+﻿import React, { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { getMovie } from "../Services/moviesApi";
+import { getScreeningsByMovie } from "../Services/screeningsApi";
+import { createReservation } from "../Services/reservationsApi";
+import { omdbByTitle } from "../api/omdb";
+
+function fmtDate(iso) {
+    try {
+        return new Date(iso).toLocaleString();
+    } catch {
+        return iso;
+    }
+}
 
 export default function MovieDetailsPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const [movie, setMovie] = useState(null);
     const [omdb, setOmdb] = useState(null);
     const [screenings, setScreenings] = useState([]);
-
     const [loading, setLoading] = useState(true);
-    const [err, setErr] = useState("");
 
-    const OMDB_KEY = import.meta.env.VITE_OMDB_KEY;
+    const [selectedScreening, setSelectedScreening] = useState(null);
+    const [seats, setSeats] = useState(1);
+    const [isBooking, setIsBooking] = useState(false);
+    const [bookingSuccess, setBookingSuccess] = useState("");
+    const [bookingError, setBookingError] = useState("");
 
     useEffect(() => {
-        let mounted = true;
+        let alive = true;
 
-        (async () => {
-            setLoading(true);
-            setErr("");
-
+        async function load() {
             try {
-                const mRes = await fetch(`http://localhost:3000/movies/${id}`);
-                const m = await mRes.json();
-                if (!mounted) return;
+                setLoading(true);
+                setBookingSuccess("");
+                setBookingError("");
+
+                const m = await getMovie(id);
+                if (!alive) return;
                 setMovie(m);
 
-                // screenings
-                const sRes = await fetch(`http://localhost:3000/screenings/movie/${id}`);
-                const s = await sRes.json();
-                if (mounted) setScreenings(Array.isArray(s) ? s : []);
+                const [om, scr] = await Promise.all([
+                    omdbByTitle(m.Title, m.Year),
+                    getScreeningsByMovie(id),
+                ]);
 
-                // OMDb
-                if (m?.Title) {
-                    const oRes = await fetch(
-                        `https://www.omdbapi.com/?apikey=${OMDB_KEY}&t=${encodeURIComponent(m.Title)}&plot=full`
-                    );
-                    const o = await oRes.json();
-                    if (mounted) setOmdb(o);
-                }
+                if (!alive) return;
+                setOmdb(om);
+                setScreenings(scr || []);
             } catch (e) {
-                if (mounted) setErr(e.message || "Failed to load details");
+                console.error(e);
             } finally {
-                if (mounted) setLoading(false);
+                if (alive) setLoading(false);
             }
-        })();
+        }
 
-        return () => { mounted = false; };
+        load();
+        return () => {
+            alive = false;
+        };
     }, [id]);
 
-    if (loading) return <div className="container"><p>Loading…</p></div>;
-    if (err) return <div className="container"><p style={{ color: "var(--danger)" }}>{err}</p></div>;
-    if (!movie) return <div className="container"><p>Movie not found.</p></div>;
+    const poster = omdb?.Poster && omdb.Poster !== "N/A" ? omdb.Poster : null;
 
-    const poster =
-        (omdb?.Poster && omdb.Poster !== "N/A" && omdb.Poster) ||
-        (movie.ImageUrl ? movie.ImageUrl : null);
+    const chips = useMemo(() => {
+        if (!movie) return null;
+        return (
+            <div className="chips">
+                <span className="chip">⏱ {movie.DurationMinutes} min</span>
+                <span className="chip">⭐ {movie.Rating}</span>
+                {omdb?.Year && omdb.Year !== "N/A" ? <span className="chip">📅 {omdb.Year}</span> : null}
+                {omdb?.Genre && omdb.Genre !== "N/A" ? <span className="chip">🎭 {omdb.Genre}</span> : null}
+                {omdb?.imdbRating && omdb.imdbRating !== "N/A" ? (
+                    <span className="chip">IMDb {omdb.imdbRating}</span>
+                ) : null}
+            </div>
+        );
+    }, [movie, omdb]);
+
+    function openBookingModal(screening) {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            navigate("/login", {
+                state: {
+                    from: location.pathname,
+                    message: "Please login to complete your reservation.",
+                },
+            });
+            return;
+        }
+
+        setSelectedScreening(screening);
+        setSeats(1);
+        setBookingError("");
+        setBookingSuccess("");
+    }
+
+    function closeBookingModal() {
+        setSelectedScreening(null);
+        setSeats(1);
+        setIsBooking(false);
+        setBookingError("");
+    }
+
+    async function confirmBooking() {
+        if (!selectedScreening) return;
+
+        try {
+            setIsBooking(true);
+            setBookingError("");
+
+            const payload = {
+                screeningId: selectedScreening.Id,
+                seats: Number(seats),
+            };
+
+            await createReservation(payload);
+
+            setBookingSuccess("Reservation created successfully ✅");
+            closeBookingModal();
+        } catch (e) {
+            setBookingError(e.message || "Booking failed");
+        } finally {
+            setIsBooking(false);
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="page">
+                <div className="muted">Loading…</div>
+            </div>
+        );
+    }
+
+    if (!movie) {
+        return (
+            <div className="page">
+                <div className="muted">Movie not found.</div>
+            </div>
+        );
+    }
+
+    const totalPrice =
+        selectedScreening && seats
+            ? Number(selectedScreening.Price || 0) * Number(seats)
+            : 0;
 
     return (
-        <div className="container">
-            <div style={{ marginTop: 18 }}>
-                <Link className="link" to="/">← Back to Movies</Link>
-            </div>
+        <div className="page">
+            <Link to="/movies" className="backlink">
+                ← Back to Movies
+            </Link>
 
-            <div className="detailsWrap">
-                <div className="poster">
+            {bookingSuccess ? <div className="alert success">{bookingSuccess}</div> : null}
+
+            <div className="details-layout">
+                <div className="details-poster">
                     {poster ? (
-                        <img src={poster} alt={movie.Title} />
+                        <img className="details-poster-img" src={poster} alt={movie.Title} />
                     ) : (
-                        <div style={{ padding: 18 }} className="subtle">No poster</div>
+                        <div className="poster-fallback big">
+                            <div className="poster-fallback-inner">
+                                <span className="emoji">🎬</span>
+                                <span>No poster</span>
+                            </div>
+                        </div>
                     )}
                 </div>
 
-                <div className="panel">
-                    <h1 style={{ marginTop: 0, marginBottom: 8 }}>{movie.Title}</h1>
+                <div className="details-card">
+                    <h1 className="details-title">{movie.Title}</h1>
+                    {chips}
 
-                    <div className="kicker">
-                        <span className="pill">⏱ {movie.DurationMinutes} min</span>
-                        <span className="pill">⭐ {movie.Rating}</span>
-                        {omdb?.Year && omdb.Year !== "N/A" && <span className="pill">📅 {omdb.Year}</span>}
-                        {omdb?.Genre && omdb.Genre !== "N/A" && <span className="pill">🎭 {omdb.Genre}</span>}
-                        {omdb?.imdbRating && omdb.imdbRating !== "N/A" && <span className="pill">IMDb {omdb.imdbRating}</span>}
+                    <div className="section">
+                        <h3>Description</h3>
+                        <p className="muted">{movie.Description}</p>
                     </div>
 
-                    <div className="divider" />
-
-                    <div>
-                        <div className="sectionTitle">Overview</div>
-                        <p className="subtle" style={{ lineHeight: 1.6, marginTop: 6 }}>
-                            {movie.Description || "No description available."}
-                        </p>
-                    </div>
-
-                    <div className="sectionTitle">OMDb Plot (Full)</div>
-                    <p className="subtle" style={{ lineHeight: 1.6, marginTop: 6 }}>
-                        {omdb?.Plot && omdb.Plot !== "N/A" ? omdb.Plot : "No OMDb plot available."}
-                    </p>
-
-                    <div className="divider" />
-
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                        <div>
-                            <div className="sectionTitle">Director</div>
-                            <div className="subtle">{omdb?.Director && omdb.Director !== "N/A" ? omdb.Director : "-"}</div>
+                    {omdb?.Plot && omdb.Plot !== "N/A" ? (
+                        <div className="section">
+                            <h3>OMDb Plot (Full)</h3>
+                            <p className="muted">{omdb.Plot}</p>
                         </div>
-                        <div>
-                            <div className="sectionTitle">Actors</div>
-                            <div className="subtle">{omdb?.Actors && omdb.Actors !== "N/A" ? omdb.Actors : "-"}</div>
-                        </div>
-                    </div>
+                    ) : null}
 
-                    <div className="divider" />
+                    <div className="section">
+                        <h3>Showtimes</h3>
 
-                    <div className="sectionTitle">🎟 Available Showtimes</div>
-
-                    {screenings.length === 0 ? (
-                        <p className="subtle">No showtimes yet.</p>
-                    ) : (
-                        <div className="showtimes">
-                            {screenings.map((s) => {
-                                const dt = new Date(s.StartTime);
-                                const time = dt.toLocaleString();
-
-                                return (
-                                    <div key={s.Id} className="showtimeRow">
+                        {screenings.length === 0 ? (
+                            <div className="emptyState">
+                                <div className="emptyStateTitle">No showtimes available</div>
+                                <div className="muted">
+                                    This movie does not have screenings yet. Check back later or choose another movie.
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="screenings">
+                                {screenings.map((s) => (
+                                    <div key={s.Id} className="screening-item">
                                         <div>
-                                            <strong>{time}</strong>
-                                            <div className="muted2">
-                                                Room: {s.Room?.Name || s.RoomId} • {s.Room?.IsDolbyAtmos ? "Dolby Atmos" : "Standard"} • {s.Room?.Is3D ? "3D" : "2D"}
+                                            <div className="screening-time">{fmtDate(s.StartTime)}</div>
+                                            <div className="muted">
+                                                Room: {s.Room?.Name} • {s.Room?.Is3D ? "3D" : "2D"} •{" "}
+                                                {s.Room?.IsDolbyAtmos ? "Dolby Atmos" : "Standard"}
                                             </div>
                                         </div>
 
-                                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                            <span className="pill">💳 {s.Price}€</span>
-                                            <button className="btn btnPrimary" disabled title="Next step: reservations">
-                                                Reserve
+                                        <div className="screening-right">
+                                            <div className="price">€{s.Price}</div>
+                                            <button className="btn btnPrimary" onClick={() => openBookingModal(s)}>
+                                                Book
                                             </button>
                                         </div>
                                     </div>
-                                );
-                            })}
+                                ))}
+                            </div>
+                        )}
+
+                        <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            <Link className="btn btnGhost" to="/my-reservations">
+                                View My Reservations
+                            </Link>
+                            <button className="btn btnGhost" onClick={() => navigate("/movies")}>
+                                Browse More Movies
+                            </button>
                         </div>
-                    )}
+                    </div>
+
+                    {omdb?.Director && omdb.Director !== "N/A" ? (
+                        <div className="section">
+                            <h3>Director</h3>
+                            <p className="muted">{omdb.Director}</p>
+                        </div>
+                    ) : null}
+
+                    {omdb?.Actors && omdb.Actors !== "N/A" ? (
+                        <div className="section">
+                            <h3>Actors</h3>
+                            <p className="muted">{omdb.Actors}</p>
+                        </div>
+                    ) : null}
                 </div>
             </div>
+
+            {selectedScreening ? (
+                <div className="modal-backdrop" onClick={closeBookingModal}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="modalTitle">Confirm Reservation</h3>
+
+                        <div className="bookingSummary">
+                            <div className="bookingSummaryRow">
+                                <span className="muted">Movie</span>
+                                <strong>{movie.Title}</strong>
+                            </div>
+
+                            <div className="bookingSummaryRow">
+                                <span className="muted">Showtime</span>
+                                <strong>{fmtDate(selectedScreening.StartTime)}</strong>
+                            </div>
+
+                            <div className="bookingSummaryRow">
+                                <span className="muted">Room</span>
+                                <strong>{selectedScreening.Room?.Name}</strong>
+                            </div>
+
+                            <div className="bookingSummaryRow">
+                                <span className="muted">Format</span>
+                                <strong>
+                                    {selectedScreening.Room?.Is3D ? "3D" : "2D"} •{" "}
+                                    {selectedScreening.Room?.IsDolbyAtmos ? "Dolby Atmos" : "Standard"}
+                                </strong>
+                            </div>
+
+                            <div className="bookingSummaryRow">
+                                <span className="muted">Price per ticket</span>
+                                <strong>€{selectedScreening.Price}</strong>
+                            </div>
+                        </div>
+
+                        <div className="bookingRow">
+                            <div className="bookingSeatsBlock">
+                                <span className="bookingSeatsLabel">Quantity of tickets</span>
+                                <input
+                                    className="input bookingSeatsInput"
+                                    type="number"
+                                    min={1}
+                                    max={10}
+                                    value={seats}
+                                    onChange={(e) => setSeats(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="bookingTotal">
+                                <span className="muted">Total</span>
+                                <strong>€{totalPrice}</strong>
+                            </div>
+                        </div>
+
+                        {bookingError ? <div className="alert">{bookingError}</div> : null}
+
+                        <div className="modal-actions">
+                            <button className="btn btnGhost" onClick={closeBookingModal} disabled={isBooking}>
+                                Cancel
+                            </button>
+                            <button className="btn btnPrimary" onClick={confirmBooking} disabled={isBooking}>
+                                {isBooking ? "Booking..." : "Confirm Booking"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

@@ -1,31 +1,37 @@
-﻿import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext";
+﻿import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getToken } from "../services/api";
+import { logout } from "../services/authApi";
 
-export default function NavBar() {
+export default function Navbar() {
+    const token = getToken();
     const navigate = useNavigate();
-    const { isAuthed, logout } = useAuth();
+
+    const onLogout = () => {
+        logout();
+        navigate("/login");
+    };
 
     return (
         <header className="nav">
-            <div className="container navInner">
-                <Link to="/" className="brand">
-                    <span style={{ fontSize: 18 }}>🎬</span>
-                    UniWa Cinemas
-                    <span className="badge">MS SQL • Node • React</span>
+            <div className="nav-inner">
+                <Link className="brand" to="/movies">
+                    🎬 <span>UniWa Cinemas</span>
                 </Link>
 
-                <nav className="navLinks">
-                    <Link className="link" to="/">Movies</Link>
-
-                    {!isAuthed ? (
+                <nav className="nav-links">
+                    <Link to="/movies">Movies</Link>
+                    {token ? (
                         <>
-                            <Link className="link" to="/login">Login</Link>
-                            <Link className="link" to="/register">Register</Link>
+                            <Link to="/my-reservations">My Reservations</Link>
+                            <button className="btn btn-ghost" onClick={onLogout}>
+                                Logout
+                            </button>
                         </>
                     ) : (
-                        <button className="btn" onClick={() => { logout(); navigate("/login"); }}>
-                            Logout
-                        </button>
+                        <>
+                            <Link to="/login">Login</Link>
+                        </>
                     )}
                 </nav>
             </div>

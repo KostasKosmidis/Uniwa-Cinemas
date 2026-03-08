@@ -1,30 +1,34 @@
-﻿import { Routes, Route } from "react-router-dom";
-import NavBar from "./components/NavBar";
+﻿import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Navbar from "./components/Navbar";
 import MoviesPage from "./pages/MoviesPage";
-import MovieDetailsPage from "./pages/MovieDetailsPage"; // ⭐ add
+import MovieDetailsPage from "./pages/MovieDetailsPage";
 import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
+import MyReservationsPage from "./pages/MyReservationsPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
     return (
-        <div>
-            <NavBar />
+        <>
+            <Navbar />
             <Routes>
-                <Route path="/" element={<MoviesPage />} />
-                <Route path="/movies/:id" element={<MovieDetailsPage />} /> {/* ⭐ add */}
+                <Route path="/" element={<Navigate to="/movies" replace />} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+
+                <Route path="/movies" element={<MoviesPage />} />
+                <Route path="/movies/:id" element={<MovieDetailsPage />} />
 
                 <Route
-                    path="*"
+                    path="/my-reservations"
                     element={
-                        <div style={{ padding: 16 }}>
-                            <h2>404</h2>
-                            <p>Page not found</p>
-                        </div>
+                        <ProtectedRoute>
+                            <MyReservationsPage />
+                        </ProtectedRoute>
                     }
                 />
+
+                <Route path="*" element={<Navigate to="/movies" replace />} />
             </Routes>
-        </div>
+        </>
     );
 }
