@@ -8,12 +8,17 @@ const MovieService = require("./services/MovieService");
 const AuthService = require("./services/AuthService");
 const ScreeningService = require("./services/screeningService");
 const ReservationService = require("./services/reservationService");
+const RoomService = require("./services/roomService");
+
 
 // controllers (classes)
 const MovieController = require("./controllers/MovieController");
 const AuthController = require("./controllers/AuthController");
 const ScreeningController = require("./controllers/screeningController");
 const ReservationController = require("./controllers/reservationController");
+const RoomController = require("./controllers/roomController");
+
+
 
 const container = createContainer();
 
@@ -33,12 +38,19 @@ container.register({
 	authService: asClass(AuthService).scoped(),
 	screeningService: asClass(ScreeningService).scoped(),
 	reservationService: asClass(ReservationService).scoped(),
+	roomService: asClass(RoomService).scoped(),
+	screeningService: asClass(ScreeningService).scoped(),
+	
 
 	// controllers
 	movieController: asClass(MovieController).scoped(),
 	authController: asClass(AuthController).scoped(),
 	screeningController: asClass(ScreeningController).scoped(),
 	reservationController: asClass(ReservationController).scoped(),
+	roomController: asClass(RoomController).scoped(),
+	screeningController: asClass(ScreeningController).scoped(),
+	
+	
 });
 
 module.exports = container;

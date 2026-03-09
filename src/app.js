@@ -18,6 +18,7 @@ app.use("/movies", require("./routes/movieRoutes"));
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/screenings", require("./routes/screeningRoutes"));
 app.use("/reservations", require("./routes/reservationRoutes"));
+app.use("/rooms", require("./routes/roomRoutes"));
 
 app.get("/", (req, res) => {
     res.send("API is running");

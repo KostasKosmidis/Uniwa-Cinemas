@@ -3,8 +3,9 @@ module.exports = (sequelize, DataTypes) => {
         "Room",
         {
             Id: {
-                type: DataTypes.UUID,
+                type: DataTypes.INTEGER,
                 primaryKey: true,
+                autoIncrement: false,
             },
             Name: {
                 type: DataTypes.STRING,
@@ -14,11 +15,17 @@ module.exports = (sequelize, DataTypes) => {
                 type: DataTypes.INTEGER,
                 allowNull: false,
             },
-            HasDolbyAtmos: {
-                type: DataTypes.BOOLEAN,
-            },
             Is3D: {
                 type: DataTypes.BOOLEAN,
+                allowNull: false,
+            },
+            IsDolbyAtmos: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+            },
+            IsIMAX: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
             },
             CreatedAt: {
                 type: DataTypes.DATE,

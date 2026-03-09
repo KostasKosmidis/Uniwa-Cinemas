@@ -835,3 +835,212 @@ a {
         width: 100%;
     }
 }
+
+/* =========================
+   ADMIN PAGE UI POLISH
+========================= */
+
+.adminPage {
+    padding-top: 36px;
+}
+
+.adminShell {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px;
+    border-radius: 24px;
+    background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%), radial-gradient(circle at top left, rgba(139, 92, 246, 0.14), transparent 32%), linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+    .adminShell .h1 {
+        margin-bottom: 8px;
+    }
+
+    .adminShell .section {
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+        .adminShell .section:first-of-type {
+            margin-top: 20px;
+        }
+
+        .adminShell .section h3 {
+            margin: 0 0 14px;
+            font-size: 24px;
+            letter-spacing: -0.02em;
+        }
+
+/* top stats */
+.adminStats {
+    margin-top: 22px;
+    margin-bottom: 28px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+    .adminStats .reservationMetaItem {
+        background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        min-height: 92px;
+        justify-content: center;
+    }
+
+        .adminStats .reservationMetaItem strong {
+            font-size: 24px;
+            letter-spacing: -0.02em;
+        }
+
+/* form spacing */
+.adminShell .form {
+    gap: 16px;
+}
+
+.adminShell .label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.88);
+}
+
+.adminShell .input,
+.adminShell select.input {
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(7, 11, 22, 0.68);
+    color: white;
+    font-size: 15px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+    .adminShell .input:focus,
+    .adminShell select.input:focus {
+        border-color: rgba(139, 92, 246, 0.75);
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+        background: rgba(10, 15, 28, 0.9);
+    }
+
+/* buttons */
+.adminShell .btn {
+    min-height: 48px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.adminShell .btnPrimary {
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.22);
+}
+
+/* search results */
+.adminResultsList {
+    gap: 14px;
+    margin-top: 16px;
+}
+
+    .adminResultsList .screening-item {
+        padding: 16px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+        border: 1px solid rgba(255,255,255,0.08);
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+        .adminResultsList .screening-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(139, 92, 246, 0.35);
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+        }
+
+    .adminResultsList .row-title {
+        font-size: 20px;
+    }
+
+/* selected movie card */
+.adminSelectedMovieCard {
+    padding: 18px;
+    border-radius: 22px;
+    background: radial-gradient(circle at top right, rgba(139,92,246,0.10), transparent 35%), linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+}
+
+    .adminSelectedMovieCard .reservationTop {
+        align-items: stretch;
+    }
+
+    .adminSelectedMovieCard img {
+        box-shadow: 0 18px 40px rgba(0,0,0,0.28);
+    }
+
+    .adminSelectedMovieCard .row-title {
+        font-size: 28px !important;
+        line-height: 1.1;
+        margin-bottom: 6px;
+    }
+
+/* room preview */
+.adminRoomPreview {
+    margin-top: 4px;
+    margin-bottom: 6px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+    .adminRoomPreview .reservationMetaItem {
+        min-height: 88px;
+        justify-content: center;
+        background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.03));
+    }
+
+/* alerts */
+.adminShell .alert {
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+
+/* better empty spaces */
+.adminShell .muted {
+    line-height: 1.5;
+}
+
+/* responsive */
+@media (max-width: 980px) {
+    .adminStats {
+        grid-template-columns: 1fr;
+    }
+
+    .adminRoomPreview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .adminSelectedMovieCard .reservationTop {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 640px) {
+    .adminShell {
+        padding: 18px;
+        border-radius: 18px;
+    }
+
+        .adminShell .h1 {
+            font-size: 38px;
+        }
+
+        .adminShell .section h3 {
+            font-size: 20px;
+        }
+
+    .adminRoomPreview {
+        grid-template-columns: 1fr;
+    }
+
+    .adminResultsList .screening-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

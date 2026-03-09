@@ -6,6 +6,7 @@ import MovieDetailsPage from "./pages/MovieDetailsPage";
 import LoginPage from "./pages/LoginPage";
 import MyReservationsPage from "./pages/MyReservationsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminPage from "./pages/AdminPage";
 
 export default function App() {
     return (
@@ -14,6 +15,7 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<Navigate to="/movies" replace />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/admin" element={<AdminPage />} />
 
                 <Route path="/movies" element={<MoviesPage />} />
                 <Route path="/movies/:id" element={<MovieDetailsPage />} />
