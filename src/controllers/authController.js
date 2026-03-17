@@ -4,24 +4,23 @@ class AuthController {
     }
 
     register = async (req, res) => {
-        const { username, password } = req.body;
-
-        const user = await this.authService.register(username, password);
-        res.status(201).json({
-            message: "User created",
-            user: {
-                Id: user.Id,
-                Username: user.Username,
-                Role: user.Role,
-            },
-        });
+        try {
+            const result = await this.authService.register(req.body);
+            res.status(201).json(result);
+        } catch (err) {
+            console.error(err);
+            res.status(400).json({ message: err.message || "Registration failed" });
+        }
     };
 
     login = async (req, res) => {
-        const { username, password } = req.body;
-
-        const token = await this.authService.login(username, password);
-        res.json({ token });
+        try {
+            const result = await this.authService.login(req.body);
+            res.json(result);
+        } catch (err) {
+            console.error(err);
+            res.status(401).json({ message: err.message || "Wrong Credentials" });
+        }
     };
 }
 

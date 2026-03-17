@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { login } from "../Services/authApi";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { login } from "../services/authApi";
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -16,14 +16,14 @@ export default function LoginPage() {
 
     async function onSubmit(e) {
         e.preventDefault();
+        setErr("");
 
         try {
             setLoading(true);
-            setErr("");
             await login(username, password);
             navigate(from, { replace: true });
         } catch (e) {
-            setErr(e.message || "Login failed");
+            setErr(e.message || "Wrong Credentials");
         } finally {
             setLoading(false);
         }
@@ -42,6 +42,7 @@ export default function LoginPage() {
                         Username
                         <input
                             className="input"
+                            style={{ width: "100%" }}
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                         />
@@ -51,6 +52,7 @@ export default function LoginPage() {
                         Password
                         <input
                             className="input"
+                            style={{ width: "100%" }}
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -61,6 +63,13 @@ export default function LoginPage() {
                         {loading ? "Signing in..." : "Login"}
                     </button>
                 </form>
+
+                <div style={{ marginTop: 16 }} className="muted">
+                    Don’t have an account?{" "}
+                    <Link to="/register" className="link" style={{ padding: 0 }}>
+                        Register
+                    </Link>
+                </div>
             </div>
         </div>
     );

@@ -19,10 +19,35 @@ export default function AdminPage() {
     const [screenings, setScreenings] = useState([]);
     const [screeningsLoading, setScreeningsLoading] = useState(false);
 
+    const [editingScreeningId, setEditingScreeningId] = useState("");
+    const [editScreeningData, setEditScreeningData] = useState({
+        roomId: "",
+        startTime: "",
+        price: "",
+    });
+
+    const [newRoom, setNewRoom] = useState({
+        Name: "",
+        Capacity: "",
+        Is3D: false,
+        IsDolbyAtmos: false,
+        IsIMAX: false,
+    });
+
+    const [editingRoomId, setEditingRoomId] = useState("");
+    const [editRoomData, setEditRoomData] = useState({
+        Name: "",
+        Capacity: "",
+        Is3D: false,
+        IsDolbyAtmos: false,
+        IsIMAX: false,
+    });
+
     const [msg, setMsg] = useState("");
     const [err, setErr] = useState("");
     const [savingMovie, setSavingMovie] = useState(false);
     const [creatingScreening, setCreatingScreening] = useState(false);
+    const [roomLoading, setRoomLoading] = useState(false);
 
     useEffect(() => {
         loadRooms();
@@ -42,29 +67,11 @@ export default function AdminPage() {
     async function loadMoviesAndScreenings() {
         try {
             setScreeningsLoading(true);
-
-            const [moviesRes, screeningsRes, roomsRes] = await Promise.all([
-                api.get("/movies"),
-                api.get("/screenings"),
-                api.get("/rooms"),
-            ]);
-
-            const movies = Array.isArray(moviesRes.data) ? moviesRes.data : [];
-            const scr = Array.isArray(screeningsRes.data) ? screeningsRes.data : [];
-            const rms = Array.isArray(roomsRes.data) ? roomsRes.data : [];
-
-            const moviesMap = Object.fromEntries(movies.map((m) => [m.Id, m]));
-            const roomsMap = Object.fromEntries(rms.map((r) => [String(r.Id), r]));
-
-            const enriched = scr.map((s) => ({
-                ...s,
-                Movie: moviesMap[s.MovieId] || null,
-                Room: roomsMap[String(s.RoomId)] || null,
-            }));
-
-            setScreenings(enriched);
+            const screeningsRes = await api.get("/screenings");
+            setScreenings(Array.isArray(screeningsRes.data) ? screeningsRes.data : []);
         } catch (e) {
             console.error(e);
+            setErr("Failed to load screenings.");
         } finally {
             setScreeningsLoading(false);
         }
@@ -204,6 +211,152 @@ export default function AdminPage() {
         }
     }
 
+    async function deleteScreening(id) {
+        const ok = window.confirm("Are you sure you want to delete this screening?");
+        if (!ok) return;
+
+        try {
+            setErr("");
+            setMsg("");
+
+            await api.delete(`/screenings/${id}`);
+            setMsg("Screening deleted ✅");
+            await loadMoviesAndScreenings();
+        } catch (e) {
+            console.error(e);
+            setErr(e?.response?.data?.message || "Failed to delete screening.");
+        }
+    }
+
+    function startEditScreening(screening) {
+        setEditingScreeningId(screening.Id);
+        setEditScreeningData({
+            roomId: String(screening.RoomId),
+            startTime: formatDateTimeLocal(screening.StartTime),
+            price: String(screening.Price),
+        });
+    }
+
+    function cancelEditScreening() {
+        setEditingScreeningId("");
+        setEditScreeningData({
+            roomId: "",
+            startTime: "",
+            price: "",
+        });
+    }
+
+    async function saveEditScreening(id) {
+        try {
+            setErr("");
+            setMsg("");
+
+            await api.put(`/screenings/${id}`, {
+                roomId: Number(editScreeningData.roomId),
+                startTime: editScreeningData.startTime,
+                price: Number(editScreeningData.price),
+            });
+
+            setMsg("Screening updated ✅");
+            cancelEditScreening();
+            await loadMoviesAndScreenings();
+        } catch (e) {
+            console.error(e);
+            setErr(e?.response?.data?.message || "Failed to update screening.");
+        }
+    }
+
+    async function createRoom(e) {
+        e.preventDefault();
+
+        try {
+            setRoomLoading(true);
+            setErr("");
+            setMsg("");
+
+            await api.post("/rooms", {
+                ...newRoom,
+                Capacity: Number(newRoom.Capacity),
+            });
+
+            setMsg("Room created ✅");
+            setNewRoom({
+                Name: "",
+                Capacity: "",
+                Is3D: false,
+                IsDolbyAtmos: false,
+                IsIMAX: false,
+            });
+
+            await loadRooms();
+        } catch (e) {
+            console.error(e);
+            setErr(e?.response?.data?.message || "Failed to create room.");
+        } finally {
+            setRoomLoading(false);
+        }
+    }
+
+    function startEditRoom(room) {
+        setEditingRoomId(String(room.Id));
+        setEditRoomData({
+            Name: room.Name,
+            Capacity: String(room.Capacity),
+            Is3D: !!room.Is3D,
+            IsDolbyAtmos: !!room.IsDolbyAtmos,
+            IsIMAX: !!room.IsIMAX,
+        });
+    }
+
+    function cancelEditRoom() {
+        setEditingRoomId("");
+        setEditRoomData({
+            Name: "",
+            Capacity: "",
+            Is3D: false,
+            IsDolbyAtmos: false,
+            IsIMAX: false,
+        });
+    }
+
+    async function saveEditRoom(id) {
+        try {
+            setErr("");
+            setMsg("");
+
+            await api.put(`/rooms/${id}`, {
+                ...editRoomData,
+                Capacity: Number(editRoomData.Capacity),
+            });
+
+            setMsg("Room updated ✅");
+            cancelEditRoom();
+            await loadRooms();
+            await loadMoviesAndScreenings();
+        } catch (e) {
+            console.error(e);
+            setErr(e?.response?.data?.message || "Failed to update room.");
+        }
+    }
+
+    async function deleteRoom(id) {
+        const ok = window.confirm("Are you sure you want to delete this room?");
+        if (!ok) return;
+
+        try {
+            setErr("");
+            setMsg("");
+
+            await api.delete(`/rooms/${id}`);
+            setMsg("Room deleted ✅");
+            await loadRooms();
+            await loadMoviesAndScreenings();
+        } catch (e) {
+            console.error(e);
+            setErr(e?.response?.data?.message || "Failed to delete room.");
+        }
+    }
+
     function formatDateTime(value) {
         try {
             return new Date(value).toLocaleString();
@@ -212,21 +365,31 @@ export default function AdminPage() {
         }
     }
 
+    function formatDateTimeLocal(value) {
+        const d = new Date(value);
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+            d.getHours()
+        )}:${pad(d.getMinutes())}`;
+    }
+
     const selectedRoom = useMemo(
         () => rooms.find((r) => String(r.Id) === String(roomId)),
         [rooms, roomId]
+    );
+
+    const upcomingScreenings = useMemo(
+        () => screenings.filter((s) => new Date(s.StartTime) > new Date()),
+        [screenings]
     );
 
     const stats = useMemo(
         () => [
             { label: "Search Results", value: results.length },
             { label: "Available Rooms", value: rooms.length },
-            {
-                label: "Selected Movie",
-                value: savedMovie ? "Saved" : selectedOmdb ? "Chosen" : "-",
-            },
+            { label: "Upcoming Screenings", value: upcomingScreenings.length },
         ],
-        [results.length, rooms.length, savedMovie, selectedOmdb]
+        [results.length, rooms.length, upcomingScreenings.length]
     );
 
     return (
@@ -234,7 +397,7 @@ export default function AdminPage() {
             <div className="details-card adminShell">
                 <h1 className="h1">Admin Panel</h1>
                 <p className="muted">
-                    Search a movie from OMDb, save it to the database, then create a screening.
+                    Search a movie from OMDb, save it to the database, create screenings, and manage rooms.
                 </p>
 
                 {msg ? <div className="alert success">{msg}</div> : null}
@@ -310,7 +473,7 @@ export default function AdminPage() {
                                         </div>
                                     </div>
 
-                                    <button className="btn" type="button" onClick={() => selectMovie(r.imdbID)}>
+                                    <button type="button" className="btn" onClick={() => selectMovie(r.imdbID)}>
                                         Select
                                     </button>
                                 </div>
@@ -465,33 +628,294 @@ export default function AdminPage() {
 
                     {screeningsLoading ? (
                         <div className="muted">Loading screenings...</div>
-                    ) : screenings.length === 0 ? (
+                    ) : upcomingScreenings.length === 0 ? (
                         <div className="emptyState">
-                            <div className="emptyStateTitle">No screenings yet</div>
+                            <div className="emptyStateTitle">No upcoming screenings</div>
                             <div className="muted">Create a screening to see it here.</div>
                         </div>
                     ) : (
                         <div className="screenings adminResultsList">
-                            {screenings.map((s) => (
+                            {upcomingScreenings.map((s) => (
                                 <div key={s.Id} className="screening-item">
-                                    <div>
-                                        <div className="row-title">{s.Movie?.Title || "Unknown movie"}</div>
-                                        <div className="muted small">
-                                            {formatDateTime(s.StartTime)} • Room: {s.Room?.Name || s.RoomId} • Price: €
-                                            {s.Price}
-                                        </div>
-                                        <div className="muted small">
-                                            {s.Room?.Is3D ? "3D" : "2D"} •{" "}
-                                            {s.Room?.IsDolbyAtmos ? "Dolby Atmos" : "Standard Audio"} •{" "}
-                                            {s.Room?.IsIMAX ? "IMAX" : "Standard Screen"}
-                                        </div>
-                                    </div>
+                                    {editingScreeningId === s.Id ? (
+                                        <div style={{ width: "100%" }}>
+                                            <div className="form">
+                                                <label className="label">
+                                                    Room
+                                                    <select
+                                                        className="input"
+                                                        style={{ width: "100%" }}
+                                                        value={editScreeningData.roomId}
+                                                        onChange={(e) =>
+                                                            setEditScreeningData((prev) => ({ ...prev, roomId: e.target.value }))
+                                                        }
+                                                    >
+                                                        <option value="">Select room</option>
+                                                        {rooms.map((room) => (
+                                                            <option key={room.Id} value={room.Id}>
+                                                                {room.Name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </label>
 
-                                    <div className="price">€{s.Price}</div>
+                                                <label className="label">
+                                                    Start time
+                                                    <input
+                                                        className="input"
+                                                        style={{ width: "100%" }}
+                                                        type="datetime-local"
+                                                        value={editScreeningData.startTime}
+                                                        onChange={(e) =>
+                                                            setEditScreeningData((prev) => ({ ...prev, startTime: e.target.value }))
+                                                        }
+                                                    />
+                                                </label>
+
+                                                <label className="label">
+                                                    Price
+                                                    <input
+                                                        className="input"
+                                                        style={{ width: "100%" }}
+                                                        type="number"
+                                                        value={editScreeningData.price}
+                                                        onChange={(e) =>
+                                                            setEditScreeningData((prev) => ({ ...prev, price: e.target.value }))
+                                                        }
+                                                    />
+                                                </label>
+
+                                                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btnPrimary"
+                                                        onClick={() => saveEditScreening(s.Id)}
+                                                    >
+                                                        Save
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btnGhost"
+                                                        onClick={cancelEditScreening}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <div className="row-title">{s.Movie?.Title || "Unknown movie"}</div>
+                                                <div className="muted small">
+                                                    {formatDateTime(s.StartTime)} • Room: {s.Room?.Name || s.RoomId} • Price: €
+                                                    {s.Price}
+                                                </div>
+                                                <div className="muted small">
+                                                    {s.Room?.Is3D ? "3D" : "2D"} •{" "}
+                                                    {s.Room?.IsDolbyAtmos ? "Dolby Atmos" : "Standard Audio"} •{" "}
+                                                    {s.Room?.IsIMAX ? "IMAX" : "Standard Screen"}
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                                                <button
+                                                    type="button"
+                                                    className="btn"
+                                                    onClick={() => startEditScreening(s)}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btnDanger"
+                                                    onClick={() => deleteScreening(s.Id)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     )}
+                </div>
+
+                <div className="section">
+                    <h3>5. Rooms management</h3>
+
+                    <form className="form" onSubmit={createRoom}>
+                        <label className="label">
+                            Room name
+                            <input
+                                className="input"
+                                style={{ width: "100%" }}
+                                value={newRoom.Name}
+                                onChange={(e) => setNewRoom((prev) => ({ ...prev, Name: e.target.value }))}
+                            />
+                        </label>
+
+                        <label className="label">
+                            Capacity
+                            <input
+                                className="input"
+                                style={{ width: "100%" }}
+                                type="number"
+                                value={newRoom.Capacity}
+                                onChange={(e) => setNewRoom((prev) => ({ ...prev, Capacity: e.target.value }))}
+                            />
+                        </label>
+
+                        <label className="label">
+                            <input
+                                type="checkbox"
+                                checked={newRoom.Is3D}
+                                onChange={(e) => setNewRoom((prev) => ({ ...prev, Is3D: e.target.checked }))}
+                            />{" "}
+                            3D
+                        </label>
+
+                        <label className="label">
+                            <input
+                                type="checkbox"
+                                checked={newRoom.IsDolbyAtmos}
+                                onChange={(e) =>
+                                    setNewRoom((prev) => ({ ...prev, IsDolbyAtmos: e.target.checked }))
+                                }
+                            />{" "}
+                            Dolby Atmos
+                        </label>
+
+                        <label className="label">
+                            <input
+                                type="checkbox"
+                                checked={newRoom.IsIMAX}
+                                onChange={(e) => setNewRoom((prev) => ({ ...prev, IsIMAX: e.target.checked }))}
+                            />{" "}
+                            IMAX
+                        </label>
+
+                        <button className="btn btnPrimary" type="submit" disabled={roomLoading}>
+                            {roomLoading ? "Creating..." : "Add Room"}
+                        </button>
+                    </form>
+
+                    <div className="screenings adminResultsList" style={{ marginTop: 18 }}>
+                        {rooms.map((room) => (
+                            <div key={room.Id} className="screening-item">
+                                {editingRoomId === String(room.Id) ? (
+                                    <div style={{ width: "100%" }} className="form">
+                                        <label className="label">
+                                            Name
+                                            <input
+                                                className="input"
+                                                style={{ width: "100%" }}
+                                                value={editRoomData.Name}
+                                                onChange={(e) =>
+                                                    setEditRoomData((prev) => ({ ...prev, Name: e.target.value }))
+                                                }
+                                            />
+                                        </label>
+
+                                        <label className="label">
+                                            Capacity
+                                            <input
+                                                className="input"
+                                                style={{ width: "100%" }}
+                                                type="number"
+                                                value={editRoomData.Capacity}
+                                                onChange={(e) =>
+                                                    setEditRoomData((prev) => ({ ...prev, Capacity: e.target.value }))
+                                                }
+                                            />
+                                        </label>
+
+                                        <label className="label">
+                                            <input
+                                                type="checkbox"
+                                                checked={editRoomData.Is3D}
+                                                onChange={(e) =>
+                                                    setEditRoomData((prev) => ({ ...prev, Is3D: e.target.checked }))
+                                                }
+                                            />{" "}
+                                            3D
+                                        </label>
+
+                                        <label className="label">
+                                            <input
+                                                type="checkbox"
+                                                checked={editRoomData.IsDolbyAtmos}
+                                                onChange={(e) =>
+                                                    setEditRoomData((prev) => ({
+                                                        ...prev,
+                                                        IsDolbyAtmos: e.target.checked,
+                                                    }))
+                                                }
+                                            />{" "}
+                                            Dolby Atmos
+                                        </label>
+
+                                        <label className="label">
+                                            <input
+                                                type="checkbox"
+                                                checked={editRoomData.IsIMAX}
+                                                onChange={(e) =>
+                                                    setEditRoomData((prev) => ({ ...prev, IsIMAX: e.target.checked }))
+                                                }
+                                            />{" "}
+                                            IMAX
+                                        </label>
+
+                                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                                            <button
+                                                type="button"
+                                                className="btn btnPrimary"
+                                                onClick={() => saveEditRoom(room.Id)}
+                                            >
+                                                Save
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btnGhost"
+                                                onClick={cancelEditRoom}
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <div className="row-title">{room.Name}</div>
+                                            <div className="muted small">
+                                                Capacity {room.Capacity} • {room.Is3D ? "3D" : "2D"} •{" "}
+                                                {room.IsDolbyAtmos ? "Dolby Atmos" : "Standard Audio"} •{" "}
+                                                {room.IsIMAX ? "IMAX" : "Standard Screen"}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                                            <button
+                                                type="button"
+                                                className="btn"
+                                                onClick={() => startEditRoom(room)}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btnDanger"
+                                                onClick={() => deleteRoom(room.Id)}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

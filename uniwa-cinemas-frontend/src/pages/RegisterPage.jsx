@@ -1,38 +1,83 @@
-import { useState } from "react";
-import { api } from "../api/client";
-import { useNavigate } from "react-router-dom";
+﻿import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { apiFetch } from "../services/api";
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [err, setErr] = useState("");
     const [msg, setMsg] = useState("");
-    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     async function onSubmit(e) {
         e.preventDefault();
-        setError("");
+        setErr("");
         setMsg("");
 
         try {
-            await api.post("/auth/register", { username, password });
-            setMsg("Registered! Now login.");
-            setTimeout(() => navigate("/login"), 600);
-        } catch (e2) {
-            setError(e2?.response?.data?.error || e2?.response?.data?.message || e2.message || "Register failed");
+            setLoading(true);
+
+            await apiFetch("/auth/register", {
+                method: "POST",
+                body: JSON.stringify({ username, password }),
+            });
+
+            setMsg("Account created successfully ✅");
+
+            setTimeout(() => {
+                navigate("/login");
+            }, 1000);
+        } catch (e) {
+            setErr(e.message || "Registration failed");
+        } finally {
+            setLoading(false);
         }
     }
 
     return (
-        <div style={{ padding: 16, maxWidth: 420 }}>
-            <h1>Register</h1>
-            <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
-                <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" />
-                <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="password" type="password" />
-                <button type="submit">Create account</button>
-                {msg && <div style={{ color: "green" }}>{msg}</div>}
-                {error && <div style={{ color: "crimson" }}>{error}</div>}
-            </form>
+        <div className="page">
+            <div className="details-card" style={{ maxWidth: 460, margin: "0 auto" }}>
+                <h1 className="h1">Register</h1>
+
+                {msg ? <div className="alert success">{msg}</div> : null}
+                {err ? <div className="alert">{err}</div> : null}
+
+                <form className="form" onSubmit={onSubmit}>
+                    <label className="label">
+                        Username
+                        <input
+                            className="input"
+                            style={{ width: "100%" }}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                        />
+                    </label>
+
+                    <label className="label">
+                        Password
+                        <input
+                            className="input"
+                            style={{ width: "100%" }}
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </label>
+
+                    <button className="btn btnPrimary" disabled={loading}>
+                        {loading ? "Creating..." : "Register"}
+                    </button>
+                </form>
+
+                <div style={{ marginTop: 16 }} className="muted">
+                    Already have an account?{" "}
+                    <Link to="/login" className="link" style={{ padding: 0 }}>
+                        Login
+                    </Link>
+                </div>
+            </div>
         </div>
     );
 }

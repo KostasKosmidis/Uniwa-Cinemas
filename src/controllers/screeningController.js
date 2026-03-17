@@ -41,6 +41,26 @@ class ScreeningController {
             res.status(400).json({ message: err.message || "Failed to create screening" });
         }
     };
+
+    update = async (req, res) => {
+        try {
+            const screening = await this.screeningService.update(req.params.id, req.body);
+            res.json(screening);
+        } catch (err) {
+            console.error(err);
+            res.status(400).json({ message: err.message || "Failed to update screening" });
+        }
+    };
+
+    delete = async (req, res) => {
+        try {
+            const result = await this.screeningService.delete(req.params.id);
+            res.json(result);
+        } catch (err) {
+            console.error(err);
+            res.status(400).json({ message: err.message || "Failed to delete screening" });
+        }
+    };
 }
 
 module.exports = ScreeningController;

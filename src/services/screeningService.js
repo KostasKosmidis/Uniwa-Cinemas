@@ -1,5 +1,6 @@
 const { Screening, Room, Movie } = require("../models");
 const { v4: uuidv4 } = require("uuid");
+const { Op } = require("sequelize");
 
 class ScreeningService {
     async getAll() {
@@ -20,7 +21,12 @@ class ScreeningService {
 
     async getByMovie(movieId) {
         return Screening.findAll({
-            where: { MovieId: movieId },
+            where: {
+                MovieId: movieId,
+                StartTime: {
+                    [Op.gt]: new Date(),
+                },
+            },
             include: [
                 {
                     model: Room,
@@ -48,6 +54,31 @@ class ScreeningService {
             CreatedAt: new Date(),
             UpdatedAt: new Date(),
         });
+    }
+
+    async update(id, { roomId, startTime, price }) {
+        const screening = await Screening.findByPk(id);
+        if (!screening) throw new Error("Screening not found");
+
+        screening.RoomId = Number(roomId);
+        screening.StartTime = startTime;
+        screening.Price = Number(price);
+        screening.UpdatedAt = new Date();
+
+        await screening.save();
+        return screening;
+    }
+
+    async delete(id) {
+        const deleted = await Screening.destroy({
+            where: { Id: id },
+        });
+
+        if (!deleted) {
+            throw new Error("Screening not found");
+        }
+
+        return { message: "Screening deleted" };
     }
 }
 

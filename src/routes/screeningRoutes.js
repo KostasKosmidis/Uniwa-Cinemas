@@ -10,6 +10,9 @@ const api = makeInvoker(ScreeningController);
 
 router.get("/", api("getAll"));
 router.get("/movie/:movieId", api("getByMovie"));
+
 router.post("/", auth, isAdmin, api("create"));
+router.put("/:id", auth, isAdmin, api("update"));
+router.delete("/:id", auth, isAdmin, api("delete"));
 
 module.exports = router;

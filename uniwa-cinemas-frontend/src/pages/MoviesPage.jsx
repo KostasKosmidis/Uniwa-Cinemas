@@ -1,7 +1,8 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getMovies } from "../Services/moviesApi";
+import { getMovies } from "../services/moviesApi";
 import { omdbByTitle } from "../api/omdb";
+import { api } from "../api/client";
 
 function Poster({ src, alt }) {
     const [ok, setOk] = useState(true);
@@ -38,13 +39,37 @@ export default function MoviesPage() {
         async function load() {
             try {
                 setLoading(true);
-                const list = await getMovies();
-                if (!alive) return;
 
-                setMovies(list || []);
+                const [moviesRes, screeningsRes] = await Promise.all([
+                    getMovies(),
+                    api.get("/screenings"),
+                ]);
+
+                const allMovies = Array.isArray(moviesRes) ? moviesRes : [];
+                const allScreenings = Array.isArray(screeningsRes.data) ? screeningsRes.data : [];
+
+                const now = new Date();
+
+                // κρατάμε μόνο screenings που είναι μελλοντικά
+                const upcomingScreenings = allScreenings.filter(
+                    (s) => new Date(s.StartTime) > now
+                );
+
+                // movie ids που έχουν τουλάχιστον ένα screening
+                const movieIdsWithScreenings = new Set(
+                    upcomingScreenings.map((s) => s.MovieId)
+                );
+
+                // κρατάμε μόνο ταινίες που έχουν screening
+                const filteredMovies = allMovies.filter((m) =>
+                    movieIdsWithScreenings.has(m.Id)
+                );
+
+                if (!alive) return;
+                setMovies(filteredMovies);
 
                 const pairs = await Promise.all(
-                    (list || []).map(async (m) => {
+                    filteredMovies.map(async (m) => {
                         const data = await omdbByTitle(m.Title, m.Year);
                         return [m.Id, data];
                     })
@@ -63,6 +88,7 @@ export default function MoviesPage() {
         }
 
         load();
+
         return () => {
             alive = false;
         };
@@ -109,9 +135,18 @@ export default function MoviesPage() {
                 </p>
             </div>
 
-            {loading ? <div className="moviesMuted">Loading…</div> : null}
+            {loading ? <div className="moviesMuted">Loading...</div> : null}
 
-            <div className="moviesGrid">{items}</div>
+            {!loading && movies.length === 0 ? (
+                <div className="emptyState">
+                    <div className="emptyStateTitle">No available movies</div>
+                    <div className="muted">
+                        There are currently no movies with active screenings.
+                    </div>
+                </div>
+            ) : (
+                <div className="moviesGrid">{items}</div>
+            )}
         </div>
     );
 }
